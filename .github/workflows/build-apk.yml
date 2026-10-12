@@ -36,8 +36,7 @@ jobs:
       - name: Build Debug APK
         working-directory: CraftsmateV4
         run: |
-          gradle assembleDebug --no-daemon --stacktrace
-
+          gradle assembleDebug --no-daemon --stacktrac --imfo
       - name: Find APK
         run: |
           find CraftsmateV4/app/build/outputs -type f -name "*.apk" -print
