@@ -1,3 +1,4 @@
+
 name: Build Craftsmate APK
 
 on:
@@ -21,7 +22,7 @@ jobs:
           distribution: temurin
           java-version: "17"
 
-      - name: Setup Gradle
+      - name: Setup Gradle 8.9
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: "8.9"
@@ -30,18 +31,53 @@ jobs:
         run: |
           unzip -q Craftsmate-Android-V5-Pro-Workstation.zip
           echo "Project extracted"
+          ls -la
           ls -la CraftsmateV4
           ls -la CraftsmateV4/app
 
-      - name: Build Debug APK
+      - name: Debug project configuration
         working-directory: CraftsmateV4
         run: |
-          gradle assembleDebug --no-daemon --stacktrac --imfo
-      - name: Find APK
+          echo "Gradle files:"
+          find . -maxdepth 3 \
+            \( -name "build.gradle" \
+            -o -name "build.gradle.kts" \
+            -o -name "settings.gradle" \
+            -o -name "settings.gradle.kts" \
+            -o -name "gradle.properties" \) \
+            -print
+          echo "Java version:"
+          java -version
+          echo "Gradle version:"
+          gradle --version
+
+      - name: Build Debug APK with detailed logs
+        working-directory: CraftsmateV4
         run: |
-          find CraftsmateV4/app/build/outputs -type f -name "*.apk" -print
+          set -o pipefail
+          gradle assembleDebug \
+            --no-daemon \
+            --stacktrace \
+            --info \
+            2>&1 | tee "$GITHUB_WORKSPACE/gradle-build.log"
+
+      - name: Find APK
+        if: success()
+        run: |
+          find CraftsmateV4/app/build/outputs \
+            -type f -name "*.apk" -print
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gradle-build-log
+          path: gradle-build.log
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: Craftsmate-debug-apk
